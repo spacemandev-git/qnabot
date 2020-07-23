@@ -1,5 +1,4 @@
 node_modules/
 .env
 discoursesetuplinks.txt
-old_index.ts
 ssh.bat
