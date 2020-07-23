@@ -6,8 +6,8 @@ dotenv.config();
 
 const bot = new Discord.Client();
 bot.login(process.env.DISCORD_BOT_KEY);
-const prefix = "!qna"
-
+const prefix = "!qna";
+const discordWhitelistChannel = process.env.DISCORD_WHITELIST_CHANNEL;
 
 const discourseHeaders = {
   "Api-Key": process.env.DISCOURSE_API_KEY,
@@ -17,9 +17,10 @@ const discourseHeaders = {
 const discourseURL = process.env.DISCOURSE_URL
 const discourseCategory = process.env.DISCOURSE_CATEGORY
 
+
 bot.once("ready", ()=>{console.log("Ready to A some Q!")});
 bot.on('message', async (message) => {
-  if(!message.content.startsWith(prefix) || !message.guild){ return; }
+  if(!message.content.startsWith(prefix) || !message.guild || message.channel.id != discordWhitelistChannel){ return; }
   const cmd = message.content.split(" ")[1]
   console.log("MSG: ", message.content);
   console.log("CMD: ", cmd);
