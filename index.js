@@ -188,6 +188,10 @@ function addToTopic(message, topic_id, uriList) {
                 case 4: return [4 /*yield*/, (_a.sent()).json()];
                 case 5:
                     response = _a.sent();
+                    console.log(response);
+                    if (response.errors) {
+                        throw new Error(JSON.stringify(response.errors));
+                    }
                     topic_slug = response['topic_slug'];
                     _a.label = 6;
                 case 6:

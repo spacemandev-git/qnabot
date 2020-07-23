@@ -98,6 +98,8 @@ async function addToTopic(message:Discord.Message, topic_id:string, uriList:stri
         })
       }
       let response = await (await fetch(discourseURL+'/posts.json',postParams)).json()
+      console.log(response);
+      if(response.errors){throw new Error(JSON.stringify(response.errors))}
       topic_slug = response['topic_slug']
     }
   }
