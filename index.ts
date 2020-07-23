@@ -20,13 +20,13 @@ const discourseCategory = process.env.DISCOURSE_CATEGORY
 
 bot.once("ready", ()=>{console.log("Ready to A some Q!")});
 bot.on('message', async (message) => {
-  if(!message.content.startsWith(prefix) || !message.guild || message.channel.id != discordWhitelistChannel){ return; }
+  if(!message.content.startsWith(prefix) || !message.guild){ return; }
   const cmd = message.content.split(" ")[1]
   console.log("MSG: ", message.content);
   console.log("CMD: ", cmd);
 
   try{
-    if(cmd.toLowerCase() == "thread"){
+    if(cmd.toLowerCase() == "thread"  && message.channel.id == discordWhitelistChannel){
       //!qna thread "How do I do a thing?" https://discordapp.com/channels/734962134160506912/734962134160506915/735353838294401105 https://discordapp.com/channels/734962134160506912/734962134160506915/735353863229407272 https://discordapp.com/channels/734962134160506912/734962134160506915/735353896977039400
       const startQuote = message.content.indexOf("\"");
       const endQuote = message.content.indexOf("\"", startQuote +1)
@@ -36,7 +36,7 @@ bot.on('message', async (message) => {
       await createNewTopic(message, topic, args)
     } else if (cmd.toLowerCase() == "help"){
       message.channel.send(returnHelpText())
-    } else if (cmd.toLowerCase() == "post"){
+    } else if (cmd.toLowerCase() == "post" && message.channel.id == discordWhitelistChannel){
       //!qna post 15 https://discordapp.com/channels/734962134160506912/734962134160506915/735353838294401105
 
       const topicId = message.content.split(" ")[2]
