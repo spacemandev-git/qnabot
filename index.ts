@@ -30,7 +30,7 @@ bot.on('message', async (message) => {
       const startQuote = message.content.indexOf("\"");
       const endQuote = message.content.indexOf("\"", startQuote +1)
       const topic = message.content.slice(startQuote+1, endQuote);
-      const args = message.content.slice(endQuote+2,).split("\n")
+      const args = message.content.slice(endQuote+2,).split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
       console.log("ARGS: ", args);
       await createNewTopic(message, topic, args)
     } else if (cmd.toLowerCase() == "help"){
@@ -39,7 +39,8 @@ bot.on('message', async (message) => {
       //!qna post 15 https://discordapp.com/channels/734962134160506912/734962134160506915/735353838294401105
 
       const topicId = message.content.split(" ")[2]
-      const args = message.content.split("\n").slice(1, )
+      const args = message.content.split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      console.log("ARGS: ", args);
       await addToTopic(message, topicId, args)
     } else if (cmd.toLowerCase() == "search"){
       //!qna search "Some Query"
@@ -55,12 +56,12 @@ bot.on('message', async (message) => {
 
 async function createNewTopic(message:Discord.Message, topic:string, uriList:string[]){
   if(topic.length < 15){throw new Error(`Topic "${topic}" needs to be atleast 15 characters long (Discourse Requirement)`)}
-  if(uriList.length < 1 || uriList[0] == "" || !uriList[0].includes("discordapp.com")) {throw new Error("Please include atleast one discord message to be included in the Discourse thread");}
+  if(uriList.length < 1) {throw new Error("Please include atleast one discord message to be included in the Discourse thread");}
 
-  const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[5]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
-  const firstMessage:Discord.Message = await firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[6])
+  const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[1]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
+  const firstMessage:Discord.Message = await firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[2])
   let msg = "Author: "+firstMessage.author.username+"\nMessage: \n\n"+firstMessage.content;
-  if(msg.length < 20){throw new Error(`Post (${uriList[0].split("/")[6]}) needs to be atleast 20 characters!`)}
+  if(msg.length < 20){throw new Error(`Post (${uriList[0].split("/")[2]}) needs to be atleast 20 characters!`)}
 
   //Create Topic
   let params = {
@@ -84,10 +85,10 @@ async function addToTopic(message:Discord.Message, topic_id:string, uriList:stri
   if(uriList.length < 1){return;}
   let topic_slug = ""
   for(let i=0; i<uriList.length; i++){
-    const channel:Discord.TextChannel =  <Discord.TextChannel>bot.channels.cache.get(uriList[i].split('/')[5])
-    const msg:Discord.Message = await channel.messages.fetch(uriList[i].split('/')[6])
+    const channel:Discord.TextChannel =  <Discord.TextChannel>bot.channels.cache.get(uriList[i].split('/')[1])
+    const msg:Discord.Message = await channel.messages.fetch(uriList[i].split('/')[2])
     let msgRaw = "Author: "+msg.author.username+"\nMessage: \n\n"+msg.content;
-    if(msgRaw.length < 20){message.channel.send(`Post (${uriList[i].split('/')[5]}) is too short, cannot make into Discourse Post.`)}
+    if(msgRaw.length < 20){message.channel.send(`Post (${uriList[i].split('/')[2]}) is too short, cannot make into Discourse Post.`)}
     else {
       let postParams = {
         method: 'post',
@@ -98,7 +99,6 @@ async function addToTopic(message:Discord.Message, topic_id:string, uriList:stri
         })
       }
       let response = await (await fetch(discourseURL+'/posts.json',postParams)).json()
-      console.log(response);
       if(response.errors){throw new Error(JSON.stringify(response.errors))}
       topic_slug = response['topic_slug']
     }
@@ -126,13 +126,13 @@ This should only be used for developer question and answer threads.
 
 Commands
 Thread
-Usage: \`!qna thread "some unique topic name" \\n discordLink_first_post \\n discordLink_second_post....\`
-Description: Creates a new topic and creates posts under that topic based on discord links given. EACH DISCORD LINK MUST BE ON A NEW LINE. 
+Usage: \`!qna thread "some unique topic name" discordLink_first_post discordLink_second_post....\`
+Description: Creates a new topic and creates posts under that topic based on discord links given.
 The topic name must be unique and greater than 15 characters, whereas the post content should be greater than 20 characters.
 
 Post
-Usage: \`!qna post topic_id \\n discordLink  \\n discordLink....\`
-Description: Adds to an existing topic. EACH DISCORD LINK MUST BE ON A NEW LINE. Topc Id can be found as the last number on a given thread URL
+Usage: \`!qna post topic_id discordLink discordLink....\`
+Description: Adds to an existing topic. Topc Id can be found as the last number on a given thread URL
 
 Search
 Usage: \`!qna search "query string"\`

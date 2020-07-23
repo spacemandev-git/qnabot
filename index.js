@@ -69,7 +69,9 @@ bot.on('message', function (message) { return __awaiter(void 0, void 0, void 0, 
                 startQuote = message.content.indexOf("\"");
                 endQuote = message.content.indexOf("\"", startQuote + 1);
                 topic = message.content.slice(startQuote + 1, endQuote);
-                args = message.content.slice(endQuote + 2).split("\n");
+                args = message.content.slice(endQuote + 2).split("https://discordapp.com/channels/").filter(function (el) { if (el.includes("/")) {
+                    return el;
+                } }).map(function (el) { return el.trim(); });
                 console.log("ARGS: ", args);
                 return [4 /*yield*/, createNewTopic(message, topic, args)];
             case 2:
@@ -82,7 +84,10 @@ bot.on('message', function (message) { return __awaiter(void 0, void 0, void 0, 
             case 4:
                 if (!(cmd.toLowerCase() == "post")) return [3 /*break*/, 6];
                 topicId = message.content.split(" ")[2];
-                args = message.content.split("\n").slice(1);
+                args = message.content.split("https://discordapp.com/channels/").filter(function (el) { if (el.includes("/")) {
+                    return el;
+                } }).map(function (el) { return el.trim(); });
+                console.log("ARGS: ", args);
                 return [4 /*yield*/, addToTopic(message, topicId, args)];
             case 5:
                 _a.sent();
@@ -114,17 +119,17 @@ function createNewTopic(message, topic, uriList) {
                     if (topic.length < 15) {
                         throw new Error("Topic \"" + topic + "\" needs to be atleast 15 characters long (Discourse Requirement)");
                     }
-                    if (uriList.length < 1 || uriList[0] == "" || !uriList[0].includes("discordapp.com")) {
+                    if (uriList.length < 1) {
                         throw new Error("Please include atleast one discord message to be included in the Discourse thread");
                     }
-                    firstPost_DiscordChannel = bot.channels.cache.get(uriList[0].split('/')[5]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
+                    firstPost_DiscordChannel = bot.channels.cache.get(uriList[0].split('/')[1]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
                     ;
-                    return [4 /*yield*/, firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[6])];
+                    return [4 /*yield*/, firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[2])];
                 case 1:
                     firstMessage = _a.sent();
                     msg = "Author: " + firstMessage.author.username + "\nMessage: \n\n" + firstMessage.content;
                     if (msg.length < 20) {
-                        throw new Error("Post (" + uriList[0].split("/")[6] + ") needs to be atleast 20 characters!");
+                        throw new Error("Post (" + uriList[0].split("/")[2] + ") needs to be atleast 20 characters!");
                     }
                     params = {
                         method: "post",
@@ -167,13 +172,13 @@ function addToTopic(message, topic_id, uriList) {
                     _a.label = 1;
                 case 1:
                     if (!(i < uriList.length)) return [3 /*break*/, 7];
-                    channel = bot.channels.cache.get(uriList[i].split('/')[5]);
-                    return [4 /*yield*/, channel.messages.fetch(uriList[i].split('/')[6])];
+                    channel = bot.channels.cache.get(uriList[i].split('/')[1]);
+                    return [4 /*yield*/, channel.messages.fetch(uriList[i].split('/')[2])];
                 case 2:
                     msg = _a.sent();
                     msgRaw = "Author: " + msg.author.username + "\nMessage: \n\n" + msg.content;
                     if (!(msgRaw.length < 20)) return [3 /*break*/, 3];
-                    message.channel.send("Post (" + uriList[i].split('/')[5] + ") is too short, cannot make into Discourse Post.");
+                    message.channel.send("Post (" + uriList[i].split('/')[2] + ") is too short, cannot make into Discourse Post.");
                     return [3 /*break*/, 6];
                 case 3:
                     postParams = {
