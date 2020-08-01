@@ -32,7 +32,12 @@ bot.on('message', async (message) => {
       const startQuote = message.content.indexOf("\"");
       const endQuote = message.content.indexOf("\"", startQuote +1)
       const topic = message.content.slice(startQuote+1, endQuote);
-      let args = message.content.slice(endQuote+2,).split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      let args = []
+      if(message.content.includes("app.com")){
+        args = message.content.split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      } else {
+        args = message.content.split("https://discord.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      }
       console.log("ARGS: ", args);
       await createNewTopic(message, topic, args)
     } else if (cmd.toLowerCase() == "help"){
