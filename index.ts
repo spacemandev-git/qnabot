@@ -41,7 +41,14 @@ bot.on('message', async (message) => {
       //!qna post 15 https://discordapp.com/channels/734962134160506912/734962134160506915/735353838294401105
 
       const topicId = message.content.split(" ")[2]
-      const args = message.content.split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      let args = []
+
+      if(message.content.includes("app.com")){
+        args = message.content.split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      } else {
+        args = message.content.split("https://discord.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      }
+
       console.log("ARGS: ", args);
       await addToTopicCondensed(message, topicId, args, false)
     } else if (cmd.toLowerCase() == "search"){
@@ -64,7 +71,7 @@ async function createNewTopic(message:Discord.Message, topic:string, uriList:str
 
   console.log(uriList)
   console.log(uriList[0].split('/'))
-  const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[1]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
+  const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[1])
   const firstMessage:Discord.Message = await firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[2])
   let msg = "Author: "+firstMessage.author.username+"\nMessage: \n\n"+firstMessage.content;
   if(msg.length < 20){throw new Error(`Post (${uriList[0].split("/")[2]}) needs to be atleast 20 characters!`)}
