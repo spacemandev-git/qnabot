@@ -1,6 +1,7 @@
 import * as Discord from 'discord.js';
 import fetch from 'node-fetch';
 import * as dotenv from 'dotenv';
+import { start } from 'repl';
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ bot.on('message', async (message) => {
       const startQuote = message.content.indexOf("\"");
       const endQuote = message.content.indexOf("\"", startQuote +1)
       const topic = message.content.slice(startQuote+1, endQuote);
-      const args = message.content.slice(endQuote+2,).split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
+      let args = message.content.slice(endQuote+2,).split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim().split('\\n')[0]})
       console.log("ARGS: ", args);
       await createNewTopic(message, topic, args)
     } else if (cmd.toLowerCase() == "help"){
@@ -42,13 +43,15 @@ bot.on('message', async (message) => {
       const topicId = message.content.split(" ")[2]
       const args = message.content.split("https://discordapp.com/channels/").filter(el => {if(el.includes("/")){return el;}}).map(el=>{return el.trim()})
       console.log("ARGS: ", args);
-      await addToTopic(message, topicId, args)
+      await addToTopicCondensed(message, topicId, args, false)
     } else if (cmd.toLowerCase() == "search"){
       //!qna search "Some Query"
       const startQuote = message.content.indexOf("\"");
       const endQuote = message.content.indexOf("\"", startQuote +1)
       const queryString = message.content.slice(startQuote+1, endQuote);
       await search(message, queryString);
+    } else if (cmd.toLowerCase() == "test") {
+      message.channel.send("Bot is online!");
     }
   } catch (e) {
     message.channel.send(e.message)
@@ -76,12 +79,61 @@ async function createNewTopic(message:Discord.Message, topic:string, uriList:str
   }
   let topicJson = await (await fetch(discourseURL+'/posts.json', params)).json()
   if(topicJson.errors){throw new Error(JSON.stringify(topicJson.errors))}
-  await addToTopic(message, topicJson.topic_id, uriList.slice(1,));
+  await addToTopicCondensed(message, topicJson.topic_id, uriList.slice(1,), true);
 
   const topicUrl = discourseURL+'/t/'+topicJson.topic_slug+"/"+topicJson.topic_id
   message.channel.send(`Topic "${topic}" created @ ${topicUrl}`)
 }
-async function addToTopic(message:Discord.Message, topic_id:string, uriList:string[]){
+
+async function addToTopicCondensed(message:Discord.Message, topic_id:string, uriList:string[], isThread:boolean){
+  console.log(uriList);
+  if(uriList.length < 1) {return;}
+  
+  // Build A List of Discord Messages
+  let allMsgs: Discord.Message[] = [];
+  for(let uri of uriList){
+    const channel:Discord.TextChannel =  <Discord.TextChannel>bot.channels.cache.get(uri.split('/')[1])
+    const msg:Discord.Message = await channel.messages.fetch(uri.split('/')[2])
+    allMsgs.push(msg);
+  }
+
+  let startingIdx = 0;
+  let endIdx = -1;
+
+  let topic_slug = ""
+
+  while(endIdx < allMsgs.length){
+    console.log(`Start ${startingIdx} End ${endIdx}`)
+    endIdx = getLastCummalativeIdx(allMsgs, startingIdx, allMsgs[startingIdx].author.username)
+    console.log(`Start IDX: ${startingIdx} End IDX: ${endIdx}`)
+    let postContent = ""
+    for(let i=startingIdx; i<endIdx; i++){
+      postContent += allMsgs[i].content + "\n"
+    }
+    let msgRaw = `Author: ${allMsgs[startingIdx].author.username} \n\n Message: \n\n ${postContent}`;
+    let postParams = {
+      method: 'post',
+      headers: discourseHeaders,
+      body: JSON.stringify({
+        topic_id: topic_id,
+        raw: msgRaw
+      })
+    }
+    let response = await (await fetch(discourseURL+'/posts.json',postParams)).json()
+    if(response.errors){throw new Error(JSON.stringify(response.errors))}
+    topic_slug = response['topic_slug']   
+
+    startingIdx = endIdx + 1;
+    if(startingIdx >= allMsgs.length){break;}
+  }
+
+  if(!isThread){
+    const topic_url = discourseURL+'/t/'+topic_slug+'/'+topic_id
+    message.channel.send(`Posts added to topic: ${topic_url}`);
+  }
+}
+
+/* async function addToTopic(message:Discord.Message, topic_id:string, uriList:string[]){
   console.log(uriList);
   if(uriList.length < 1){return;}
   let topic_slug = ""
@@ -106,7 +158,7 @@ async function addToTopic(message:Discord.Message, topic_id:string, uriList:stri
   }
   const topic_url = discourseURL+'/t/'+topic_slug+'/'+topic_id
   message.channel.send(`Posts added to topic: ${topic_url}`);
-}
+} */
 async function search(message:Discord.Message, query:string){
   let searchUrl = discourseURL+'/search.json?q='+query;
   let results = await (await fetch(searchUrl)).json();
@@ -144,4 +196,11 @@ Usage: \`!qna help\`
 Description: Prints out the help section
 `
   return res;
+}
+
+function getLastCummalativeIdx(array:Discord.Message[], idx: number, author:string){
+  if(idx == array.length || array[idx].author.username != author){
+    return idx;
+  }
+  return getLastCummalativeIdx(array, idx+1, author)
 }
