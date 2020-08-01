@@ -62,6 +62,8 @@ async function createNewTopic(message:Discord.Message, topic:string, uriList:str
   if(topic.length < 15){throw new Error(`Topic "${topic}" needs to be atleast 15 characters long (Discourse Requirement)`)}
   if(uriList.length < 1) {throw new Error("Please include atleast one discord message to be included in the Discourse thread");}
 
+  console.log(uriList)
+  console.log(uriList[0].split('/'))
   const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[1]) //message.guild.channels.cache.get(uriList[0].split('/')[5])
   const firstMessage:Discord.Message = await firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[2])
   let msg = "Author: "+firstMessage.author.username+"\nMessage: \n\n"+firstMessage.content;
@@ -133,32 +135,6 @@ async function addToTopicCondensed(message:Discord.Message, topic_id:string, uri
   }
 }
 
-/* async function addToTopic(message:Discord.Message, topic_id:string, uriList:string[]){
-  console.log(uriList);
-  if(uriList.length < 1){return;}
-  let topic_slug = ""
-  for(let i=0; i<uriList.length; i++){
-    const channel:Discord.TextChannel =  <Discord.TextChannel>bot.channels.cache.get(uriList[i].split('/')[1])
-    const msg:Discord.Message = await channel.messages.fetch(uriList[i].split('/')[2])
-    let msgRaw = "Author: "+msg.author.username+"\nMessage: \n\n"+msg.content;
-    if(msgRaw.length < 20){message.channel.send(`Post (${uriList[i].split('/')[2]}) is too short, cannot make into Discourse Post.`)}
-    else {
-      let postParams = {
-        method: 'post',
-        headers: discourseHeaders,
-        body: JSON.stringify({
-          topic_id: topic_id,
-          raw: msgRaw
-        })
-      }
-      let response = await (await fetch(discourseURL+'/posts.json',postParams)).json()
-      if(response.errors){throw new Error(JSON.stringify(response.errors))}
-      topic_slug = response['topic_slug']
-    }
-  }
-  const topic_url = discourseURL+'/t/'+topic_slug+'/'+topic_id
-  message.channel.send(`Posts added to topic: ${topic_url}`);
-} */
 async function search(message:Discord.Message, query:string){
   let searchUrl = discourseURL+'/search.json?q='+query;
   let results = await (await fetch(searchUrl)).json();
