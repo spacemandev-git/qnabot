@@ -74,8 +74,6 @@ async function createNewTopic(message:Discord.Message, topic:string, uriList:str
   if(topic.length < 15){throw new Error(`Topic "${topic}" needs to be atleast 15 characters long (Discourse Requirement)`)}
   if(uriList.length < 1) {throw new Error("Please include atleast one discord message to be included in the Discourse thread");}
 
-  console.log(uriList)
-  console.log(uriList[0].split('/'))
   const firstPost_DiscordChannel = <Discord.TextChannel>bot.channels.cache.get(uriList[0].split('/')[1])
   const firstMessage:Discord.Message = await firstPost_DiscordChannel.messages.fetch(uriList[0].split('/')[2])
   let msg = "Author: "+firstMessage.author.username+"\nMessage: \n\n"+firstMessage.content;
@@ -100,7 +98,7 @@ async function createNewTopic(message:Discord.Message, topic:string, uriList:str
 }
 
 async function addToTopicCondensed(message:Discord.Message, topic_id:string, uriList:string[], isThread:boolean){
-  console.log(uriList);
+  console.log("AddTopicCondensed recieved: " , uriList);
   if(uriList.length < 1) {return;}
   
   // Build A List of Discord Messages
@@ -117,13 +115,16 @@ async function addToTopicCondensed(message:Discord.Message, topic_id:string, uri
   let topic_slug = ""
 
   while(endIdx < allMsgs.length){
-    console.log(`Start ${startingIdx} End ${endIdx}`)
+    //console.log(`Start ${startingIdx} End ${endIdx}`)
     endIdx = getLastCummalativeIdx(allMsgs, startingIdx, allMsgs[startingIdx].author.username)
     console.log(`Start IDX: ${startingIdx} End IDX: ${endIdx}`)
+    
     let postContent = ""
     for(let i=startingIdx; i<endIdx; i++){
       postContent += allMsgs[i].content + "\n"
     }
+
+
     let msgRaw = `Author: ${allMsgs[startingIdx].author.username} \n\n Message: \n\n ${postContent}`;
     let postParams = {
       method: 'post',
@@ -137,7 +138,8 @@ async function addToTopicCondensed(message:Discord.Message, topic_id:string, uri
     if(response.errors){throw new Error(JSON.stringify(response.errors))}
     topic_slug = response['topic_slug']   
 
-    startingIdx = endIdx + 1;
+    //endIdx + 1 or endIdx?
+    startingIdx = endIdx;
     if(startingIdx >= allMsgs.length){break;}
   }
 
